@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    .git {
+      display: flex;
+      margin: 50px;
+      width: 900px;
+    }
+
+    .git .git-left {
+      width: 32px;
+      text-align: center;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-top: 50px;
+    }
+
+    .git .git-right {
+      width: 0;
+      flex: 1;
+      display: flex;
+      height: 155px;
+      position: relative;
+    }
+
+    .git .git-right .git-wrap {
+      display: flex;
+      padding: 0 70px 0 120px;
+      height: calc(100% + 20px);
+      overflow-x: scroll;
+      position: relative;
+    }
+
+    .git .git-right .git-wrap .git-first {
+      position: absolute;
+      top: 50px;
+      left: 0;
+      width: 135px;
+      height: 105px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .git .git-right .git-wrap .git-first::after {
+      content: '';
+      position: absolute;
+      top: -25%;
+      left: -25%;
+      width: 150%;
+      height: 150%;
+      transform: rotate(45deg);
+      background: -webkit-linear-gradient(top, transparent 3px, #ddd 4px);
+      background-size: 100% 4px;
+    }
+
+    .git .git-right .git-wrap .month {
+      display: flex;
+      position: relative;
+      padding-top: 50px;
+      padding-bottom: 20px;
+    }
+
+    .git .git-right .git-wrap .month .title {
+      position: absolute;
+      top: 50px;
+      max-width: 45px;
+      margin-top: -16px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .git .git-right .git-wrap .month:first-child .week {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .git .git-right .git-wrap .month .week .day {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      border: 1px solid #fff;
+      box-sizing: border-box;
+      font-size: 10px;
+      position: relative;
+
+    }
+
+    .git .git-right .git-wrap .month .week .day::before {
+      content: attr(data-tit);
+      visibility: hidden;
+      position: absolute;
+      padding: 9px 12px;
+      border-radius: 5px;
+      left: 50%;
+      bottom: 100%;
+      margin-bottom: 15px;
+      transform: translateX(-50%);
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6);
+      line-height: 1;
+      font-size: 12px;
+      background: #000;
+      color: #fff;
+      white-space: nowrap;
+      z-index: 99;
+      transition: all .3s ease-in-out;
+      opacity: 0;
+    }
+
+    .git .git-right .git-wrap .month .week .day:hover::before {
+      visibility: visible;
+      opacity: 1;
+      margin-bottom: 10px;
+    }
+
+    .git .git-right .git-wrap .month .week .day:hover {
+      border: 1px solid #000;
+    }
+
+    .git .git-right .git-wrap .month .week .day.current {
+      background: #ffd602 !important;
+    }
+
+    .git .git-right .git-wrap .month .week .day.current::after {
+      content: attr(data-tit)"\A"attr(data-time);
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      right: 16px;
+      font-size: 10px;
+      color: #777;
+      white-space: pre;
+      padding: 1px 4px;
+      background: rgba(255, 214, 2, .2);
+    }
+
+    .git .git-right .git-wrap .month .week .day.none {
+      display: none;
+    }
+
+    .git .git-right .git-wrap .month .week .day.less {
+      background: #eee;
+    }
+
+    .git .git-right .git-wrap .month .week .day.little {
+      background: #d6e685;
+    }
+
+    .git .git-right .git-wrap .month .week .day.some {
+      background: #8cc665;
+    }
+
+    .git .git-right .git-wrap .month .week .day.many {
+      background: #44a340;
+    }
+
+    .git .git-right .git-wrap .month .week .day.much {
+      background: #1e6823;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="git"></div>
+</body>
+<script>
+
+  (function (window) {
+    var map = ['less', 'little', 'some', 'many', 'much'];
+    var monthMap = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+    // 常量，一排7个
+    var COLUMN = 7;
+    // 常量，12 个月
+    var MONTHS = 12;
+
+    var Git = function (params) {
+      this.extend(this.params, params)
+      this.init()
+    }
+    Git.prototype = {
+      params: {
+        element: false,
+        startDate: '',
+        colorMap: [],
+        tip: {
+          show: true,
+          color: '#fff',
+          bgColor: 'rgba(0, 0, 0, .8)'
+        },
+        data: []
+      },
+      init: function () {
+        var element = this.params.element;
+        var startDate = this.params.startDate;
+        if (!element || element.nodeType !== 1) return
+        var currentDate = new Date();
+        var html = '<div class="git-left">' +
+          '<div class="day">周一</div>' +
+          '<div class="day">周四</div>' +
+          '<div class="day">周日</div>' +
+          '</div>' +
+          '<div class="git-right">' +
+          '<div class="git-wrap">' +
+          '<div class="git-first"></div>' +
+          '</div>' +
+          '</div>'
+        element.innerHTML = html;
+        // 1. 当前时间和开始时间的月份差
+        var diffMonth = this.diffMonth(startDate);
+        // 2. 通过获取的当前时间跟设置的开始时间差算出中间需要循环出的月份
+        for (var i = 0; i < diffMonth; i++) {
+          var mhtml = '<div class="month">' +
+            '<div class="title"></div>' +
+            '</div>';
+          element.querySelector('.git-wrap').insertAdjacentHTML('beforeEnd', mhtml);
+          // 3. 获取开始日期的时间
+          var date = new Date(startDate)
+          // 4. 设置当前月份的Date，跟随月份递增
+          date.setMonth(date.getMonth() + i);
+          var year = date.getFullYear();
+          var month = date.getMonth();
+          var setCurrentDate = new Date(year, month, 1);
+          // 获取当前月份的是从哪个日期开始的
+          var firstDay = setCurrentDate.getDay() === 0 ? 6 : (setCurrentDate.getDay() - 1);
+          element.querySelectorAll('.title')[i].innerHTML = monthMap[month]
+          var months = [31, this.isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+          var weeks = Math.ceil((firstDay + months[month]) / COLUMN);
+          // 获取下个月有多少天
+          var nextMonth = (weeks * COLUMN) - (months[month] + firstDay);
+          // 获取上个月有多少天
+          var lastMonth = (month - 1 >= 0) ? (months[month - 1]) : 31;
+          // 设置每个月有多少周，最后减一是为了去掉最后一周，因为在第一周的时候加上了上个月的时间
+          // 这里有个注意的地方是，如果当月的最后一天如果是周日，就不需要再去减掉最后一周，可以直接显示出来
+          date.setMonth(date.getMonth() + 1);
+          var lastDay = new Date(date.setDate(0)).getDay();
+          if (i !== diffMonth - 1 && lastDay !== 0) {
+            weeks = weeks - 1
+          }
+          for (var j = 0; j < weeks; j++) {
+            var whtml = '<div class="week">' +
+              '<div class="day less"></div>' +
+              '<div class="day less"></div>' +
+              '<div class="day less"></div>' +
+              '<div class="day less"></div>' +
+              '<div class="day less"></div>' +
+              '<div class="day less"></div>' +
+              '<div class="day less"></div>' +
+              '</div>'
+            element.querySelectorAll('.month')[i].insertAdjacentHTML('beforeEnd', whtml)
+          }
+          var isFirstDay = false;
+          var day = element.querySelectorAll('.month')[i].querySelectorAll('.day');
+          var flag = firstDay - 1;
+          for (var m = 0; m < months[month]; m++) {
+            var d = firstDay++
+            // 给当月的 1号 的前面加上 上个月的日期
+            if (m <= flag) {
+              // 去掉第一个月的第一周里面的上一个月的末尾日期
+              if (i === 0) {
+                day[flag - m].classList.add('none')
+              }
+              var num = this.parseDate(day[flag - m], year, month, lastMonth - m)
+              day[flag - m].setAttribute('data-tit', num + '次发文：' + year + '-' + month + '-' + (lastMonth - m))
+            }
+            if (!day[d]) break;
+            var num = this.parseDate(day[d], year, month + 1, m + 1)
+            day[d].setAttribute('data-time', year + '-' + (month + 1) + '-' + (m + 1))
+            day[d].setAttribute('data-tit', num + '次发文：' + year + '-' + (month + 1) + '-' + (m + 1))
+            // 拿到起始的日期索引，去掉最开始第一个月中的初始日期之前的日期
+            if (!isFirstDay && i === 0) {
+              if (
+                (month + 1) == parseInt(startDate.substring(5, 7)) &&
+                year == parseInt(startDate.substring(0, 4)) &&
+                (m + 1) == parseInt(startDate.substring(8, 10))
+              ) {
+                day[d].classList.add('current')
+                day[d].setAttribute('data-time', year + '年' + (month + 1) + '月' + (m + 1) + '日')
+                day[d].setAttribute('data-tit', '第一篇文章啊！🐣')
+                isFirstDay = true;
+              } else {
+                day[d].classList.add('none')
+              }
+            }
+            // 去掉最后一个月之中从当前日期往后的日期
+            if (i === diffMonth - 1) {
+              if ((m + 1) > currentDate.getDate()) {
+                day[d].classList.add('none')
+              }
+              if (m < nextMonth) {
+                day[day.length - m - 1].classList.add('none')
+              }
+            }
+          }
+        }
+        this.addEvent(document.querySelector('.git-wrap'), 'scroll', function (e) {
+          console.log(e.target.scrollLeft)
+        })
+        setTimeout(function () {
+          document.querySelector('.git-right').scrollTo({
+            left: 500,
+            behavior: 'smooth'
+          })
+          console.log(11)
+        }, 1000)
+
+      },
+      parseDate: function (dom, year, month, day) {
+        var gitData = this.params.data;
+        var colorMap = this.params.colorMap;
+        var num = 0;
+        for (var n = 0; n < gitData.length; n++) {
+          if (
+            month == parseInt(gitData[n].time.substring(5, 7)) &&
+            year == parseInt(gitData[n].time.substring(0, 4)) &&
+            day == parseInt(gitData[n].time.substring(8, 10))
+          ) {
+            num = parseInt(dom.getAttribute('data-num')) || 0
+            if (num) {
+              num++
+              dom.setAttribute('data-num', num)
+            } else {
+              num = 1
+              dom.setAttribute('data-num', 1)
+            }
+            if (colorMap.length >= 5) {
+              dom.style.background = colorMap[num]
+            } else {
+              dom.classList.remove('less')
+              dom.classList.remove('little')
+              dom.classList.remove('some')
+              dom.classList.remove('many')
+              dom.classList.remove('much')
+              dom.classList.add(map[num])
+            }
+          }
+        }
+        return num;
+      },
+      isLeapYear: function (year) {
+        // 判断 平年闰年[四年一闰，百年不闰，四百年再闰]
+        return (year % 4 === 0) && (year % 100 !== 0 || year % 400 === 0);
+      },
+      diffMonth: function (startDate) {
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth();
+        var day = date.getDay();
+        var startDateMonth = parseInt(startDate.split('-')[0]) * 12 + parseInt(startDate.split('-')[1]);
+        var currentDateMonth = year * 12 + (month + 1)
+        // 最后加上本身的一个月
+        return currentDateMonth - startDateMonth + 1;
+      },
+      addEvent: function (elm, type, fn) {
+        if (window.attachEvent) {
+          elm.attachEvent("on" + type, fn);
+        } else if (window.addEventListener) {
+          elm.addEventListener(type, fn, false);
+        } else {
+          elm["on" + type] = fn;
+        }
+      },
+      extend: function (a, b) {
+        for (var key in b) {
+          if (b.hasOwnProperty(key)) {
+            a[key] = b[key]
+          }
+        }
+        return a
+      }
+    }
+
+    window.Git = Git
+  })(window)
+
+  new Git({
+    element: document.querySelector('.git'),
+    startDate: '2020-03-06',
+    data: [
+      {
+        time: '2020-03-08'
+      },
+      {
+        time: '2020-04-02'
+      },
+      {
+        time: '2020-04-05'
+      },
+      {
+        time: '2020-04-13'
+      },
+      {
+        time: '2020-04-13'
+      },
+      {
+        time: '2020-04-14'
+      },
+      {
+        time: '2020-05-01'
+      },
+      {
+        time: '2020-05-04'
+      },
+      {
+        time: '2020-05-05'
+      },
+      {
+        time: '2020-05-06'
+      },
+      {
+        time: '2020-05-07'
+      },
+      {
+        time: '2020-05-07'
+      },
+      {
+        time: '2020-05-07'
+      },
+      {
+        time: '2020-06-15'
+      },
+      {
+        time: '2020-06-29'
+      },
+      {
+        time: '2020-07-20'
+      },
+      {
+        time: '2020-08-05'
+      },
+      {
+        time: '2020-08-10'
+      },
+      {
+        time: '2020-08-22'
+      },
+      {
+        time: '2020-10-20'
+      },
+    ]
+  })
+</script>
+
+</html>

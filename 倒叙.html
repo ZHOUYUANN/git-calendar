@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background: #ddd;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    .git {
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .git .git-box {
+      display: flex;
+      width: 100%;
+    }
+
+    .git .git-color {
+      height: 30px;
+      line-height: 30px;
+      float: right;
+      position: relative;
+      z-index: 9;
+      background: #fff;
+      padding-left: 6px;
+      display: flex;
+    }
+
+    .git .git-color .word {
+      font-size: 12px;
+    }
+
+    .git .git-color .list {
+      display: flex;
+      align-items: center;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 5px;
+    }
+
+    .git .git-color .list .item {
+      margin: 0 1px;
+      width: 12px;
+      height: 12px;
+      vertical-align: text-bottom;
+    }
+
+    .git .git-left {
+      width: 32px;
+      text-align: center;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-top: 50px;
+    }
+
+    .git .git-right {
+      width: 0;
+      flex: 1;
+      display: flex;
+      height: 155px;
+      position: relative;
+    }
+
+    .git .git-right .git-wrap {
+      display: flex;
+      height: calc(100% + 20px);
+      overflow-x: scroll;
+    }
+
+    .git .git-right .git-wrap .git-content {
+      display: flex;
+      position: relative;
+      padding-top: 50px;
+      z-index: 9;
+    }
+
+    .git .git-right .git-wrap .git-year {
+      position: absolute;
+      top: 0;
+      width: 38px;
+      font-size: 16px;
+      background: #fff;
+      z-index: 19;
+    }
+
+    .git .git-right .git-wrap .git-content .git-first {
+      position: absolute;
+      top: 50px;
+      right: -122px;
+      width: 135px;
+      height: 105px;
+      box-sizing: border-box;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .git .git-right .git-wrap .git-content .git-first::after {
+      content: '';
+      position: absolute;
+      top: -25%;
+      left: -25%;
+      width: 155%;
+      height: 155%;
+      transform: rotate(135deg);
+      background: -webkit-linear-gradient(top, transparent 3px, #ddd 4px);
+      background-size: 100% 4px;
+    }
+
+    .git .git-right .git-wrap .git-content .month {
+      display: flex;
+      position: relative;
+      height: 105px;
+    }
+
+    .git .git-right .git-wrap .git-content .month .year {
+      position: absolute;
+      top: -50px;
+      font-size: 16px;
+      width: 38px;
+    }
+
+    .git .git-right .git-wrap .git-content .month .year.active {
+      display: none;
+    }
+
+    .git .git-right .git-wrap .git-content .month .title {
+      position: absolute;
+      top: -16px;
+      max-width: 45px;
+      font-size: 12px;
+    }
+
+    .git .git-right .git-wrap .git-content .month:first-child .week {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      border: 1px solid #fff;
+      box-sizing: border-box;
+      font-size: 10px;
+      position: relative;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day::before {
+      content: attr(data-tit);
+      visibility: hidden;
+      position: absolute;
+      padding: 9px 12px;
+      border-radius: 5px;
+      left: 50%;
+      bottom: 100%;
+      margin-bottom: 15px;
+      transform: translateX(-50%);
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6);
+      line-height: 1;
+      font-size: 12px;
+      background: #000;
+      color: #fff;
+      white-space: nowrap;
+      z-index: 99;
+      transition: all .3s ease-in-out;
+      opacity: 0;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day:hover::before {
+      visibility: visible;
+      opacity: 1;
+      margin-bottom: 10px;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day:hover {
+      border: 1px solid #000;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.current {
+      background: #ffd602 !important;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.current::after {
+      content: attr(data-tit)"\A"attr(data-time);
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      left: 16px;
+      font-size: 10px;
+      color: #777;
+      white-space: pre;
+      padding: 1px 4px;
+      background: rgba(255, 214, 2, .2);
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.none {
+      display: none;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.less,
+    .git .git-color .list .item.less {
+      background: #eee;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.little,
+    .git .git-color .list .item.little {
+      background: #d6e685;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.some,
+    .git .git-color .list .item.some {
+      background: #8cc665;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.many,
+    .git .git-color .list .item.many {
+      background: #44a340;
+    }
+
+    .git .git-right .git-wrap .git-content .month .week .day.much,
+    .git .git-color .list .item.much {
+      background: #1e6823;
+    }
+  </style>
+</head>
+<body>
+  <div class="git"></div>
+  <script src="./index.js"></script>
+  <script>
+    var data = [
+      {
+        time: '2020-02-18'
+      },
+      {
+        time: '2020-03-08'
+      },
+      {
+        time: '2020-04-02'
+      },
+      {
+        time: '2020-04-05'
+      },
+      {
+        time: '2020-04-13'
+      },
+      {
+        time: '2020-04-13'
+      },
+      {
+        time: '2020-04-14'
+      },
+      {
+        time: '2020-05-01'
+      },
+      {
+        time: '2020-05-04'
+      },
+      {
+        time: '2020-05-05'
+      },
+      {
+        time: '2020-05-06'
+      },
+      {
+        time: '2020-05-07'
+      },
+      {
+        time: '2020-05-07'
+      },
+      {
+        time: '2020-05-07'
+      },
+      {
+        time: '2020-06-15'
+      },
+      {
+        time: '2020-06-29'
+      },
+      {
+        time: '2020-07-20'
+      },
+      {
+        time: '2020-08-05'
+      },
+      {
+        time: '2020-08-10'
+      },
+      {
+        time: '2020-08-22'
+      },
+      {
+        time: '2020-10-20'
+      },
+      {
+        time: '2020-12-28'
+      },
+    ]
+    new Git({
+      element: document.querySelector('.git'),
+      startDate: '2016-03-03',
+      data: data
+    })
+  </script>
+</body>
+</html>
