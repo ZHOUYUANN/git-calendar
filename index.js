@@ -5,7 +5,13 @@
  * @param element 必须，挂在的dom元素节点
  * @param startDate 必须，表示日期开始的时间
  * @param data 必须，所需要展示的数据频率，当然你可以不传，但是这就没什么意义了
+ * @param showHand 非必须，控制下方的控制滚动和展示颜色，默认为 true，一般可以在移动端设置false，不需要手动控制滚动
  * @param colorMap 非必须，需要展示的频率颜色深度，可以自己设置标识
+ * @fn refresh 方法，可以更新日历数据
+ * 
+ * by: ZHOUYUANN
+ * https://luszy.com
+ * 
  */
  (function (window) {
   var map = ['less', 'little', 'some', 'many', 'much'];
@@ -14,6 +20,13 @@
   var COLUMN = 7;
   // 常量，年份的宽度
   var TITLE_WIDTH = 38;
+  // 计时器
+  var timer = null;
+  // 点击滚动的距离
+  var step = 100;
+  // 是否是点击
+  var isClick = false;
+  var clickTime = null;
 
   var Git = function (params) {
     this.extend(this.params, params)
@@ -23,12 +36,14 @@
     params: {
       element: false,
       startDate: '',
+      showHand: true,
       colorMap: [],
       data: []
     },
     init: function () {
       var element = this.params.element;
       var startDate = this.params.startDate;
+      var showHand = this.params.showHand;
       var colorMap = this.params.colorMap;
       var listWidth = [];
       if (!element || element.nodeType !== 1) return
@@ -38,15 +53,28 @@
         '<div class="item '+ colorMap[1] +'"></div>' +
         '<div class="item '+ colorMap[2] +'"></div>' +
         '<div class="item '+ colorMap[3] +'"></div>' +
-        '<div class="item '+ colorMap[4] +'"></div>' +
-        '</div>'
+        '<div class="item '+ colorMap[4] +'"></div>'
       } else {
         var chtml = '<div class="item less"></div>' +
         '<div class="item little"></div>' +
         '<div class="item some"></div>' +
         '<div class="item many"></div>' +
-        '<div class="item much"></div>' +
+        '<div class="item much"></div>'
+      }
+      if (showHand) {
+        var hhtml = '<div class="git-hand">' +
+        '<div class="git-btn">' +
+        '<div class="btn left"><i class="fa fa-angle-left"></i></div>' +
+        '<div class="btn right"><i class="fa fa-angle-right"></i></div>' +
+        '</div>' +
+        '<div class="git-color">' +
+        '<div class="word">少</div>' +
+        '<div class="list">' + chtml + '</div>' +
+        '<div class="word">多</div>' +
+        '</div>' +
         '</div>'
+      } else {
+        var hhtml = ''
       }
       var html = '<div class="git-box">' +
         '<div class="git-left">' +
@@ -61,12 +89,7 @@
         '</div>' +
         '<div class="git-year">' + currentDate.getFullYear() + '</div>' +
         '</div>' +
-        '</div></div>' +
-        '<div class="git-color">' +
-        '<div class="word">少</div>' +
-        '<div class="list">' + chtml +
-        '<div class="word">多</div>' +
-        '</div>'
+        '</div></div>' + hhtml;
       element.innerHTML = html;
       // 1. 当前时间和开始时间的月份差
       var diffMonth = this.diffMonth(startDate);
@@ -101,13 +124,9 @@
         // 这里有个注意的地方是，如果当月的最后一天如果是周日，就不需要再去减掉最后一周，可以直接显示出来
         date.setMonth(date.getMonth() + 1);
         var lastDay = new Date(date.setDate(0)).getDay();
-        var len = 0;
         if (i !== diffMonth - 1 && lastDay !== 6) {
           weeks = weeks - 1;
-          len = 0;
-        } else {
-          len = 7 - lastDay;
-        }
+        } 
         for (var j = 0; j < weeks; j++) {
           var whtml = '<div class="week">' +
             '<div class="day less"></div>' +
@@ -128,7 +147,7 @@
         var _year = year;
         // 每日的日期
         var day = 0;
-        for (var m = days.length; m > len; m--) {
+        for (var m = days.length; m > 0; m--) {
           day++
           var d = --_firstDay;
           // 因为是倒叙，所以就减 1 来获取索引
@@ -207,6 +226,57 @@
               yearList[i + 1].querySelector('.year').classList.remove('active')
             }
           }
+        }
+      })
+      if (showHand) {
+        // 滚动的容器
+        var domWrap = document.querySelector('.git-wrap');
+        var domRight = document.querySelector('.git-btn .right');
+        var domLeft = document.querySelector('.git-btn .left');
+        // 监听右侧箭头的长按事件
+        this.mouseDown(domWrap, domRight, 'right');
+        this.mouseUp(domWrap, domRight, 'right');
+        // 监听左侧箭头的长按事件
+        this.mouseDown(domWrap, domLeft, 'left');
+        this.mouseUp(domWrap, domLeft, 'left');
+      }
+    },
+    // 公开方法
+    refresh: function(data) {
+      this.params.data = data;
+      this.init()
+    },
+    mouseDown: function(domWrap, dom, direction) {
+      this.addEvent(dom, 'mousedown', function() {
+        isClick = true;
+        clearTimeout(clickTime);
+        // 如果是长按就连续滚动
+        clickTime = setTimeout(function() {
+          var scrollX = domWrap.scrollLeft;
+          isClick = false;
+          timer = setInterval(function() {
+            scrollX = (direction === 'right') ? (scrollX + 2) : (scrollX - 2);
+            domWrap.scrollTo({ 
+              left: scrollX,
+              top: 0
+            });
+          }, 30)
+        }, 1000);
+      })
+    },
+    mouseUp: function(domWrap, dom, direction) {
+      this.addEvent(dom, 'mouseup', function(e) {
+        clearTimeout(clickTime);
+        clearInterval(timer);
+        // 如果是短按就跳跃滚动
+        if (isClick) {
+          var scrollX = domWrap.scrollLeft;
+          scrollX = (direction === 'right') ? (scrollX + step) : (scrollX - step);
+          domWrap.scrollTo({ 
+            left: scrollX,
+            top: 0,
+            behavior: 'smooth' 
+          });
         }
       })
     },
